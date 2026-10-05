@@ -48,7 +48,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/db
       '@resume-judge/extraction':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/extraction
       '@resume-judge/types':
         specifier: workspace:*
