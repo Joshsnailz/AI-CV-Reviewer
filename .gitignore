@@ -30,3 +30,7 @@ pnpm-debug.log*
 .cache/
 tmp/
 temp/
+# Generated
+next-env.d.ts
+*.tsbuildinfo
+packages/db/src/generated/
