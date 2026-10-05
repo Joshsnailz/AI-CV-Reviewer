@@ -1,0 +1,122 @@
+// Data model from the architecture doc, section 13.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AnalysisStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                 String              @id @default(uuid()) @db.Uuid
+  email              String              @unique
+  name               String?
+  passwordHash       String?             @map("password_hash")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  resumes            Resume[]
+  jobs               Job[]
+  creditTransactions CreditTransaction[]
+
+  @@map("users")
+}
+
+model Resume {
+  id               String          @id @default(uuid()) @db.Uuid
+  userId           String          @map("user_id") @db.Uuid
+  originalFilename String          @map("original_filename")
+  storageKey       String          @unique @map("storage_key")
+  mimeType         String          @map("mime_type")
+  fileSize         Int             @map("file_size")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions         ResumeVersion[]
+
+  @@index([userId])
+  @@map("resumes")
+}
+
+model ResumeVersion {
+  id             String        @id @default(uuid()) @db.Uuid
+  resumeId       String        @map("resume_id") @db.Uuid
+  version        Int
+  rawText        String?       @map("raw_text")
+  normalizedJson Json?         @map("normalized_json")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  resume         Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  analyses       Analysis[]
+  jobAnalyses    JobAnalysis[]
+
+  @@unique([resumeId, version])
+  @@map("resume_versions")
+}
+
+model Analysis {
+  id              String         @id @default(uuid()) @db.Uuid
+  resumeVersionId String         @map("resume_version_id") @db.Uuid
+  status          AnalysisStatus @default(QUEUED)
+  overallScore    Int?           @map("overall_score")
+  analysisJson    Json?          @map("analysis_json")
+  model           String?
+  promptVersion   String?        @map("prompt_version")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  completedAt     DateTime?      @map("completed_at")
+  resumeVersion   ResumeVersion  @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+
+  @@index([resumeVersionId])
+  @@map("analyses")
+}
+
+model Job {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  title       String
+  company     String?
+  description String
+  createdAt   DateTime      @default(now()) @map("created_at")
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses    JobAnalysis[]
+
+  @@index([userId])
+  @@map("jobs")
+}
+
+model JobAnalysis {
+  id              String        @id @default(uuid()) @db.Uuid
+  jobId           String        @map("job_id") @db.Uuid
+  resumeVersionId String        @map("resume_version_id") @db.Uuid
+  matchScore      Int?          @map("match_score")
+  analysisJson    Json?         @map("analysis_json")
+  model           String?
+  promptVersion   String?       @map("prompt_version")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  job             Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersion   ResumeVersion @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([resumeVersionId])
+  @@map("job_analyses")
+}
+
+model CreditTransaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  amount    Int
+  type      String
+  reference String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("credit_transactions")
+}
