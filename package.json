@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "pnpm --filter @resume-judge/types --filter @resume-judge/db run build && pnpm --parallel --filter @resume-judge/web --filter @resume-judge/api run dev",
+    "dev": "pnpm --filter @resume-judge/types --filter @resume-judge/db --filter @resume-judge/extraction run build && pnpm --parallel --filter @resume-judge/web --filter @resume-judge/api run dev",
     "build": "pnpm -r run build",
     "lint": "eslint .",
     "typecheck": "pnpm -r run typecheck",
