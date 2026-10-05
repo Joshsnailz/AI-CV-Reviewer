@@ -31,15 +31,16 @@ model User {
   @@map("users")
 }
 
+// userId is optional until authentication lands; anonymous uploads have none.
 model Resume {
   id               String          @id @default(uuid()) @db.Uuid
-  userId           String          @map("user_id") @db.Uuid
+  userId           String?         @map("user_id") @db.Uuid
   originalFilename String          @map("original_filename")
   storageKey       String          @unique @map("storage_key")
   mimeType         String          @map("mime_type")
   fileSize         Int             @map("file_size")
   createdAt        DateTime        @default(now()) @map("created_at")
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions         ResumeVersion[]
 
   @@index([userId])
@@ -47,15 +48,19 @@ model Resume {
 }
 
 model ResumeVersion {
-  id             String        @id @default(uuid()) @db.Uuid
-  resumeId       String        @map("resume_id") @db.Uuid
-  version        Int
-  rawText        String?       @map("raw_text")
-  normalizedJson Json?         @map("normalized_json")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  resume         Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  analyses       Analysis[]
-  jobAnalyses    JobAnalysis[]
+  id                 String        @id @default(uuid()) @db.Uuid
+  resumeId           String        @map("resume_id") @db.Uuid
+  version            Int
+  rawText            String?       @map("raw_text")
+  // Text extraction results, filled in when the version is created.
+  pageCount          Int?          @map("page_count")
+  wordCount          Int           @default(0) @map("word_count")
+  extractionWarnings String[]      @default([]) @map("extraction_warnings")
+  normalizedJson     Json?         @map("normalized_json")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  resume             Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  analyses           Analysis[]
+  jobAnalyses        JobAnalysis[]
 
   @@unique([resumeId, version])
   @@map("resume_versions")
